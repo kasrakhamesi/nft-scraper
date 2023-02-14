@@ -1,1 +1,1 @@
-module.exports.trendings = require('./trending.service')
+module.exports.opensea = require('./opensea')

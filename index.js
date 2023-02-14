@@ -4,43 +4,35 @@ const cors = require('cors')
 const logger = require('morgan')
 const workerFarm = require('worker-farm')
 require('dotenv').config()
-/*
-const { Builder, Browser, By, Key, until } = require('selenium-webdriver')
 
-;(async function example() {
-  let driver = await new Builder().forBrowser(Browser.FIREFOX).build()
-  try {
-    await driver.get('https://www.google.com/ncr')
-    await driver.findElement(By.name('q')).sendKeys('webdriver', Key.RETURN)
-    await driver.wait(until.titleIs('webdriver - Google Search'), 1000)
-  } finally {
-    await driver.quit()
-  }
-})()
-*/
-const options = {
-  debug: false,
-  logs: false,
-  sort: true,
-  additionalWait: 0,
-  browserInstance: undefined
-}
-const OpenseaScraper = require('./local_modules/opensea-scraper')
-const q = async () => {
-  const type = '24h' // possible values: "24h", "7d", "30d", "total"
-  const chain = 'ethereum'
-  const ranking = await OpenseaScraper.rankings(type, chain, options)
-  console.log(ranking)
+app.use(cors())
+app.use(logger('dev'))
+
+const services = {
+  topCollections: workerFarm(
+    require.resolve('./src/v1/services/opensea/rankings/top.service')
+  ),
+  trendingCollections: workerFarm(
+    require.resolve('./src/v1/services/opensea/rankings/trending.service')
+  )
 }
 
-q().then(console.log).catch(console.log)
+services.topCollections('hello', (err) => {
+  if (err) console.log(err)
+})
+
+services.trendingCollections('hello', (err) => {
+  if (err) console.log(err)
+})
+
+app.use('/v1', require('./src/v1/routes'))
 
 app.use('*', (req, res) => {
   res.status(404).send({
     statusCode: 404,
     data: null,
     error: {
-      message: 'صفحه یافت نشد'
+      message: '404 Not Found'
     }
   })
 })

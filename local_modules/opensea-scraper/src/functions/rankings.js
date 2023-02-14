@@ -25,7 +25,8 @@ const {
 const rankings = async (
   type = 'total',
   chain = undefined,
-  optionsGiven = {}
+  optionsGiven = {},
+  trending = false
 ) => {
   const optionsDefault = {
     debug: false,
@@ -51,7 +52,7 @@ const rankings = async (
 
   const page = await browser.newPage()
 
-  const url = getUrl(type, chain)
+  const url = getUrl(type, chain, trending)
   logs && console.log('...opening url: ' + url)
   await page.goto(url)
 
@@ -74,12 +75,12 @@ const rankings = async (
   })
 
   // extract relevant info
-  const top100 = _parseNextDataVarible(__NEXT_DATA__)
+  const top100 = _parseNextDataVarible(__NEXT_DATA__, trending)
   logs && console.log(`🥳 DONE. Total ${top100.length} Collections fetched: `)
   return top100
 }
 
-function _parseNextDataVarible(__NEXT_DATA__) {
+function _parseNextDataVarible(__NEXT_DATA__, trending) {
   const extractFloorPrice = (windowCollectionStats, extractionMethod) => {
     try {
       if (extractionMethod === 'multichain') {
@@ -96,8 +97,37 @@ function _parseNextDataVarible(__NEXT_DATA__) {
       return null
     }
   }
+  const extractTotalSupply = (windowCollectionStats) => {
+    try {
+      return Number(windowCollectionStats.totalSupply)
+    } catch (err) {
+      return null
+    }
+  }
+
+  if (trending) {
+    const extractCollection = (node) => {
+      return {
+        name: node.name,
+        slug: node.slug,
+        logo: node.logo,
+        isVerified: node.isVerified,
+        floorPrice: extractFloorPrice(node.windowCollectionStats),
+        floorPriceMultichain: extractFloorPrice(
+          node.windowCollectionStats,
+          'multichain'
+        ),
+        totalSupply: extractTotalSupply(node.windowCollectionStats)
+        // statsV2: node.statsV2, // 🚧 comment back in if you need additional stats
+        // windowCollectionStats: node.windowCollectionStats, // 🚧 comment back in if you need additional stats
+      }
+    }
+
+    return __NEXT_DATA__.props.relayCache[0][1].json.data.trendingCollections.edges.map(
+      (obj) => extractCollection(obj.node)
+    )
+  }
   const extractCollection = (node) => {
-    console.log(node)
     return {
       name: node.name,
       slug: node.slug,
@@ -107,29 +137,39 @@ function _parseNextDataVarible(__NEXT_DATA__) {
       floorPriceMultichain: extractFloorPrice(
         node.windowCollectionStats,
         'multichain'
-      )
+      ),
+      totalSupply: extractTotalSupply(node.windowCollectionStats)
       // statsV2: node.statsV2, // 🚧 comment back in if you need additional stats
       // windowCollectionStats: node.windowCollectionStats, // 🚧 comment back in if you need additional stats
     }
   }
-
-  return __NEXT_DATA__.props.relayCache[0][1].json.data.trendingCollections.edges.map(
+  return __NEXT_DATA__.props.relayCache[0][1].json.data.rankings.edges.map(
     (obj) => extractCollection(obj.node)
   )
 }
 
-function getUrl(type, chain) {
+function getUrl(type, chain, trending) {
   chainExtraQueryParameter = chain ? `&chain=${chain}` : ''
-  if (type === '24h') {
-    return `https://opensea.io/rankings/trending?sortBy=one_day_volume${chainExtraQueryParameter}`
-  } else if (type === '7d') {
-    return `https://opensea.io/rankings/trending?sortBy=seven_day_volume${chainExtraQueryParameter}`
-  } else if (type === '30d') {
-    return `https://opensea.io/rankings/trending?sortBy=thirty_day_volume${chainExtraQueryParameter}`
-  } else if (type === 'total') {
-    return `https://opensea.io/rankings/trending?sortBy=total_volume${chainExtraQueryParameter}`
+  if (trending) {
+    if (type === '24h') {
+      return `https://opensea.io/rankings/trending?sortBy=one_day_volume${chainExtraQueryParameter}`
+    } else if (type === '7d') {
+      return `https://opensea.io/rankings/trending?sortBy=seven_day_volume${chainExtraQueryParameter}`
+    } else if (type === '30d') {
+      return `https://opensea.io/rankings/trending?sortBy=thirty_day_volume${chainExtraQueryParameter}`
+    } else if (type === 'total') {
+      return `https://opensea.io/rankings/trending?sortBy=total_volume${chainExtraQueryParameter}`
+    }
   }
-
+  if (type === '24h') {
+    return `https://opensea.io/rankings?sortBy=one_day_volume${chainExtraQueryParameter}`
+  } else if (type === '7d') {
+    return `https://opensea.io/rankings?sortBy=seven_day_volume${chainExtraQueryParameter}`
+  } else if (type === '30d') {
+    return `https://opensea.io/rankings?sortBy=thirty_day_volume${chainExtraQueryParameter}`
+  } else if (type === 'total') {
+    return `https://opensea.io/rankings?sortBy=total_volume${chainExtraQueryParameter}`
+  }
   throw new Error(
     `Invalid type provided. Expected: 24h,7d,30d,total. Got: ${type}`
   )

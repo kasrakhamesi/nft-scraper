@@ -1,6 +1,6 @@
 const { Router } = require('express')
 const router = Router()
 
-router.use('/trending', require('./trending.route'))
+router.use('/rankings', require('./rankings'))
 
 module.exports = router
