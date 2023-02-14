@@ -14,7 +14,6 @@
     "express": "^4.18.2",
     "morgan": "^1.10.0",
     "selenium-webdriver": "^4.8.0",
-    "worker-farm": "^1.7.0",
-    "opensea-scraper": "^6.6.0"
+    "worker-farm": "^1.7.0"
   }
 }

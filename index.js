@@ -25,7 +25,7 @@ const options = {
   additionalWait: 0,
   browserInstance: undefined
 }
-const OpenseaScraper = require('./local_packages/opensea-scraper')
+const OpenseaScraper = require('./local_modules/opensea-scraper')
 const q = async () => {
   const type = '24h' // possible values: "24h", "7d", "30d", "total"
   const chain = 'ethereum'
